@@ -4,7 +4,7 @@ delimiterIn = ' ';
 orig_data = importdata(f_data,delimiterIn);
 % c_names = importdata(f_name,delimiterIn);
 
-% searate train and test data
+% separate train and test data
 o_train = [];
 o_test = [];
 for i = 0:length(orig_data(:,1))-1
@@ -14,7 +14,7 @@ for i = 0:length(orig_data(:,1))-1
        o_train = [o_train;orig_data(i+1,:)];
    end
 end
-
+%PLOT HISTOGRAMS AND CALCULATE PERSON CORELLATION
 % length(o_train) + length(o_test)
 %  col_name{2}
 pcor = [];
@@ -31,9 +31,12 @@ for i = 1:length(o_train(1,:))-1
 end
 
 % Data preprocessing for train
-norm_train = o_train;
-[Z,mu,sigma] = zscore(norm_train(:,1:13));
+X_norm_train = o_train(:,1:13);
+Y_train = o_train(:,14);
+[Z_train,mu_train,sigma_train] = zscore(X_norm_train);
+X_norm_train = Z_train;
+sz = size(X_norm_train(:,1));
+o_1 = ones(sz);
+X_norm_train = [o_1,X_norm_train];
 
-tmp = [Z,norm_train(:,14)];
-norm_train  = tmp;
-
+[W_train, Y_pred_train] = Linear_regression(X_norm_train, Y_train);
