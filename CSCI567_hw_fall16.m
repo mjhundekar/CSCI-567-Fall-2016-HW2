@@ -132,14 +132,19 @@ fprintf('_____________________________________________________________________\n
 
 %Ridge Regression with Cross-Validation
 %10 fold cross validation
-
+fprintf('\n Results of Cross validation on Training Set::\n Lamda Value \t MSE\n');
 cv_lamda = 0.0001;
 Res_cv = [];
-while(abs(cv_lamda - 10) > 0.0001)
+Res_cv_w = [];
+res_i =1;
+while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
     %retain 43 rows 7 times and 44 rows 3 times
-    
+    curr_mse_l = 0;
     index = 1;
+    
     for i=1:10
+        min_mse = Inf;
+        w_min = [];
         cv_X_norm_train = X_norm_train;
         cv_Y_train_true = Y_train_true;
         if(i<=7)
@@ -166,17 +171,44 @@ while(abs(cv_lamda - 10) > 0.0001)
         end
         
         MSE_rr_test = ( sum( (cv_Y_test_true - Y_rr_test_cv).^2) ) / length(cv_X_test(:,1));
-        Res_cv = [Res_cv; cv_lamda,MSE_rr_test];
+        if MSE_rr_test < min_mse
+            min_mse = MSE_rr_test;
+            w_min = W_rr;
+        end
+        curr_mse_l = curr_mse_l + MSE_rr_test;
+        %         Res_cv = [Res_cv; cv_lamda,MSE_rr_test];
         
     end
+    Res_cv = [Res_cv; cv_lamda,(curr_mse_l/10)];
+    Res_cv_w = [Res_cv_w; cv_lamda,  w_min];
+    fprintf('%f\t\t%f\n',Res_cv(res_i,1),Res_cv(res_i,2));
+    res_i = res_i +1;
     
-    cv_lamda = cv_lamda * 10;
+    cv_lamda = cv_lamda + 0.05;
 end
 
-fprintf('\n Results of Cross validation::\n Lamda Value \t MSE\n');
-disp(Res_cv);
+% fprintf('\n Results of Cross validation::\n Lamda Value \t MSE\n');
+% disp(Res_cv);
 
 
+fprintf('\n\n\n\n Results of Cross validation on Testing Set::\n Lamda Value \t MSE\n');
+Res_cv_test = [];
+for i=1:length(Res_cv_w(:,1))
+    curr_w = Res_cv_w(i,2:15);
+    curr_l =  Res_cv_w(i,1);   
+    Y_rr_test = [];
+    for j =1:length(X_norm_test(:,1))
+        temp_y = curr_w * transpose(X_norm_test(j,:));
+        Y_rr_test = [Y_rr_test;temp_y];
+    end
+    
+    MSE_rr_test = ( sum( (Y_test_true - Y_rr_test).^2) ) / length(X_norm_test(:,1));
+    Res_cv_test = [Res_cv_test; curr_l,MSE_rr_test];
+    fprintf('%f\t\t%f\n',Res_cv_test(i,1),Res_cv_test(i,2));
+    
+    
+end
+% % %  disp(Res_cv_test);
 % [B, FitInfo] = lasso(X_norm_train,Y_train_true,'CV',10);
 % lassoPlot(B,FitInfo,'PlotType','CV');
 
