@@ -1,0 +1,64 @@
+>> CSCI567_hw_fall16
+_____________________________________________________________________
+The results for Training Set using Linear and Ridge regression::
+		Algorithm					MSE
+    'Linear Regression'            '20.9441'
+    'Rigde Regression  L =0.01'    '20.9441'
+    'Rigde Regression  L =0.10'    '20.9442'
+    'Rigde Regression  L =1.00'    '20.948' 
+
+
+_____________________________________________________________________
+The results for Testing Set using Linear and Ridge regression::
+		Algorithm					MSE
+    'Linear Regression'            '28.4368'
+    'Rigde Regression  L =0.01'    '28.4371'
+    'Rigde Regression  L =0.10'    '28.4405'
+    'Rigde Regression  L =1.00'    '28.476' 
+
+_____________________________________________________________________
+
+ Results of Cross validation on Training Set::
+ Lamda Value 	 MSE
+0.000100		32.887567
+0.001000		32.887467
+0.010000		32.886470
+0.100000		32.876616
+1.000000		32.789221
+_____________________________________________________________________
+
+ Results of Cross validation on Testing Set::
+ Lamda Value 	 MSE
+0.000100		28.309525
+0.001000		28.309552
+0.010000		28.309817
+0.100000		28.312510
+1.000000		28.343134
+_____________________________________________________________________
+
+
+Features Selected based on highest correlation are::
+Attrubute		Corellation
+   13.0000    0.7400
+    6.0000    0.6909
+   11.0000    0.5053
+    3.0000    0.4831
+
+
+MSE on training data:: 26.406604
+MSE on Testing data:: 31.496203
+_____________________________________________________________________
+Best Columns section using Brute Force
+Best Columns for for MIN MSE: 25.106022 on Training SET
+     4     6    11    13
+
+
+Best Columns for for MIN MSE: 30.100406 on Training SET
+     6    11    12    13
+
+_____________________________________________________________________
+Polynomial Feature Expansion
+MSE on Training data:: 5.077346
+
+MSE on Testing data:: 14.559306
+>> 

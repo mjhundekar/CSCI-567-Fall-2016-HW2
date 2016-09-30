@@ -29,13 +29,13 @@ pcor = [];
 for i = 1:length(o_train(1,:))-1
     pcor = [pcor;i,corr(o_train(:,i),o_train(:,14))];
     
-    %UNCOMMENT BELOW FOR LOOP LATER
-    %     f = figure;
-    %     histogram(o_train(:,i),10);
-    %     title(sprintf('Histogram of %s distribution\nPearson Correlation = %f', col_name{i}, pcor(i)));
-    %     xlabel(col_name{i});
-    %     ylabel('Count');
-    %     s = sprintf('%s.jpg',col_name{i});
+%     UNCOMMENT BELOW FOR LOOP LATER
+        f = figure;
+        histogram(o_train(:,i),10);
+        title(sprintf('Histogram of %s distribution\nPearson Correlation = %f', col_name{i}, pcor(i,2)));
+        xlabel(col_name{i});
+        ylabel('Count');
+        s = sprintf('%s.jpg',col_name{i});
     
     %     saveas(f,s);
 end
@@ -45,14 +45,33 @@ end
 
 % Data preprocessing for train
 Res_train = cell(4,2);
+%split attribute and Y value
 X_norm_train = o_train(:,1:13);
 Y_train_true = o_train(:,14);
+%Normalize
 [Z_train,mu_train,sigma_train] = zscore(X_norm_train);
 X_norm_train = Z_train;
+%Add a colum of 1's 
 sz_train = size(X_norm_train(:,1));
 o_1_train = ones(sz_train);
 X_norm_train = [o_1_train,X_norm_train];
 
+%Preprocessing For Testing
+Res_test = cell(4,2);
+X_norm_test = o_test(:,1:13);
+Y_test_true = o_test(:,14);
+
+%Normalizing Test Data
+for i = 1: length(X_norm_test(:,1))
+    X_norm_test(i,:) = ((X_norm_test(i,:) - mu_train))./(sigma_train);
+end
+
+sz_test = size(X_norm_test(:,1));
+o_1_test = ones(sz_test);
+X_norm_test = [o_1_test,X_norm_test];
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Linear Regression for TRAIN
 W_train_lr = [];
@@ -80,19 +99,6 @@ disp(Res_train);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Preprocessing For Training
-Res_test = cell(4,2);
-X_norm_test = o_test(:,1:13);
-Y_test_true = o_test(:,14);
-
-%Normalizing Test Data
-for i = 1: length(X_norm_test(:,1))
-    X_norm_test(i,:) = ((X_norm_test(i,:) - mu_train))./(sigma_train);
-end
-
-sz_test = size(X_norm_test(:,1));
-o_1_test = ones(sz_test);
-X_norm_test = [o_1_test,X_norm_test];
 
 
 %Linear Regression for TEST based in W learned in training
