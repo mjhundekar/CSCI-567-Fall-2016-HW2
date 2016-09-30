@@ -25,18 +25,20 @@ end
 %PLOT HISTOGRAMS AND CALCULATE PERSON CORELLATION
 
 %UNCOMMENT BELOW FOR LOOP LATER
-% pcor = [];
-% for i = 1:length(o_train(1,:))-1
-%     pcor = [pcor;corr(o_train(:,i),o_train(:,14))];
-%     f = figure;
-%     histogram(o_train(:,i),10);
-%     title(sprintf('Histogram of %s distribution\nPearson Correlation = %f', col_name{i}, pcor(i)));
-%     xlabel(col_name{i});
-%     ylabel('Count');
-%     s = sprintf('%s.jpg',col_name{i});
-%
-% %     saveas(f,s);
-% end
+pcor = [];
+for i = 1:length(o_train(1,:))-1
+    pcor = [pcor;i,corr(o_train(:,i),o_train(:,14))];
+    
+    %UNCOMMENT BELOW FOR LOOP LATER
+    %     f = figure;
+    %     histogram(o_train(:,i),10);
+    %     title(sprintf('Histogram of %s distribution\nPearson Correlation = %f', col_name{i}, pcor(i)));
+    %     xlabel(col_name{i});
+    %     ylabel('Count');
+    %     s = sprintf('%s.jpg',col_name{i});
+    
+    %     saveas(f,s);
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,7 +124,7 @@ for i =1:length(L)
     Res_test(i+1,2) = cellstr(num2str(MSE_rr_test));
 end
 
-fprintf('\n\n_____________________________________________________________________\n');
+fprintf('\n_____________________________________________________________________\n');
 fprintf('The results for Testing Set using Linear and Ridge regression::\n');
 fprintf('\t\tAlgorithm\t\t\t\t\tMSE\n')
 disp(Res_test);
@@ -184,18 +186,18 @@ while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
     fprintf('%f\t\t%f\n',Res_cv(res_i,1),Res_cv(res_i,2));
     res_i = res_i +1;
     
-    cv_lamda = cv_lamda + 0.05;
+    cv_lamda = cv_lamda * 10;
 end
 
 % fprintf('\n Results of Cross validation::\n Lamda Value \t MSE\n');
 % disp(Res_cv);
 
-
-fprintf('\n\n\n\n Results of Cross validation on Testing Set::\n Lamda Value \t MSE\n');
+fprintf('_____________________________________________________________________\n');
+fprintf('\n Results of Cross validation on Testing Set::\n Lamda Value \t MSE\n');
 Res_cv_test = [];
 for i=1:length(Res_cv_w(:,1))
     curr_w = Res_cv_w(i,2:15);
-    curr_l =  Res_cv_w(i,1);   
+    curr_l =  Res_cv_w(i,1);
     Y_rr_test = [];
     for j =1:length(X_norm_test(:,1))
         temp_y = curr_w * transpose(X_norm_test(j,:));
@@ -208,6 +210,115 @@ for i=1:length(Res_cv_w(:,1))
     
     
 end
+
+
+%FEATURE SELECTION
+%BEST 4
+A = [pcor(:,1),abs(pcor(:,2))];
+sorted_pcor = sortrows(A,-2);
+index_p = int16(sorted_pcor(1:4,1));
+index_p = index_p +1;
+
+X_fc_train = [X_norm_train(:,1),X_norm_train(:,index_p(1)),X_norm_train(:,index_p(2)),X_norm_train(:,index_p(3)),X_norm_train(:,index_p(4))];
+Y_fc_true = Y_train_true;
+
+[W_fc_train_lr, Y_pred_train] = Linear_regression(X_fc_train, Y_fc_true);
+MSE_fc_lr_train = ( sum( (Y_fc_true - Y_pred_train).^2) ) / length(X_fc_train(:,1));
+fprintf('_____________________________________________________________________\n');
+fprintf('\n\nFeatures Selected based on highest correlation are::\nAttrubute\t\tCorellation\n');
+disp(sorted_pcor(1:4,:));
+fprintf('\nMSE on training data:: %f',MSE_fc_lr_train);
+
+X_fc_test = [X_norm_test(:,1),X_norm_test(:,index_p(1)),X_norm_test(:,index_p(2)),X_norm_test(:,index_p(3)),X_norm_test(:,index_p(4))];
+
+
+Y_fc_lr_test = [];
+for i =1:length(X_fc_test(:,1))
+    temp_y = W_fc_train_lr * transpose(X_fc_test(i,:));
+    Y_fc_lr_test = [Y_fc_lr_test;temp_y];
+end
+
+MSE_fc_lr_test = ( sum( (Y_test_true - Y_fc_lr_test).^2) ) / length(X_fc_test(:,1));
+fprintf('\nMSE on Testing data:: %f\n',MSE_fc_lr_test);
+
+%RESIDUAL
+
+%BRUTE FORCE
+fprintf('_____________________________________________________________________\n');
+fprintf('Best Columns section using Brute Force');
+
+V = [2,3,4,5,6,7,8,9,10,11,12,13,14];
+C = combnk(V,4);
+
+bf_min_mse_test = inf;
+bf_min_mse_train = inf;
+bf_min_cols_test = [];
+bf_min_cols_train = [];
+for i=1:length(C(:,1))
+    curr_cols = C(i,:);
+    X_bf_train = [X_norm_train(:,1),X_norm_train(:,curr_cols(1)),X_norm_train(:,curr_cols(2)),X_norm_train(:,curr_cols(3)),X_norm_train(:,curr_cols(4))];
+    Y_bf_true = Y_train_true;
+    
+    [W_bf_train_lr, Y_pred_train] = Linear_regression(X_bf_train, Y_bf_true);
+    MSE_bf_lr_train = ( sum( (Y_bf_true - Y_pred_train).^2) ) / length(X_bf_train(:,1));
+    
+    if  MSE_bf_lr_train < bf_min_mse_train
+        bf_min_mse_train = MSE_bf_lr_train;
+        bf_min_cols_train = curr_cols;
+    end
+    
+    
+    X_bf_test = [X_norm_test(:,1),X_norm_test(:,curr_cols(1)),X_norm_test(:,curr_cols(2)),X_norm_test(:,curr_cols(3)),X_norm_test(:,curr_cols(4))];
+    Y_bf_lr_test = [];
+    for i =1:length(X_bf_test(:,1))
+        temp_y = W_bf_train_lr * transpose(X_bf_test(i,:));
+        Y_bf_lr_test = [Y_bf_lr_test;temp_y];
+    end
+    MSE_bf_lr_test = ( sum( (Y_test_true - Y_bf_lr_test).^2) ) / length(X_bf_test(:,1));
+    if MSE_bf_lr_test < bf_min_mse_test 
+        bf_min_mse_test = MSE_bf_lr_test;
+        bf_min_cols_test = curr_cols;
+    end
+    
+end
+fprintf('\nBest Columns for for MIN MSE: %f on Training SET\n',bf_min_mse_train);
+disp(bf_min_cols_train-1);
+
+fprintf('\nBest Columns for for MIN MSE: %f on Training SET\n',bf_min_mse_test);
+disp(bf_min_cols_test-1);
+
+%BRUTE FORCE
+fprintf('_____________________________________________________________________\n');
+fprintf('Polynomial Feature Expansion');
+
+X_pf_test = X_norm_test;
+X_pf_train = X_norm_train;
+
+for i=2: length(X_norm_test(1,:))
+    for j=i: length(X_norm_test(1,:))
+        new_X_train = X_norm_train(:,i) .* X_norm_train(:,j);
+        X_pf_train = [X_pf_train,new_X_train];
+        new_X_test = X_norm_test(:,i) .* X_norm_test(:,j);
+        X_pf_test = [X_pf_test,new_X_test];
+        
+        
+    end
+end
+
+[W_train_lr, Y_pred_train] = Linear_regression(X_pf_train, Y_train_true);
+
+MSE_lr_train = ( sum( (Y_train_true - Y_pred_train).^2) ) / length(X_pf_train(:,1));
+fprintf('\nMSE on Training data:: %f\n',MSE_lr_train);
+
+Y_lr_test = [];
+for i =1:length(X_pf_test(:,1))
+    temp_y = W_train_lr * transpose(X_pf_test(i,:));
+    Y_lr_test = [Y_lr_test;temp_y];
+end
+
+MSE_lr_test = ( sum( (Y_test_true - Y_lr_test).^2) ) / length(X_pf_test(:,1));
+fprintf('\nMSE on Testing data:: %f\n',MSE_lr_test);
+
 % % %  disp(Res_cv_test);
 % [B, FitInfo] = lasso(X_norm_train,Y_train_true,'CV',10);
 % lassoPlot(B,FitInfo,'PlotType','CV');
