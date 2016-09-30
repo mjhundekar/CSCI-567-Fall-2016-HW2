@@ -1,3 +1,8 @@
+% X_norm_train
+% Y_train_true
+% X_norm_test
+% Y_test_true
+
 f_data = 'housing.data';
 col_name = cellstr(char('CRIM   ','ZN     ','INDUS  ','CHAS   ','NOX    ','RM     ','AGE    ','DIS    ','RAD    ','TAX    ','PTRATIO','B      ','LSTAT  ','MEDV   '));
 delimiterIn = ' ';
@@ -21,22 +26,8 @@ end
 
 %PLOT HISTOGRAMS AND CALCULATE PERSON CORELLATION
 
-%UNCOMMENT BELOW FOR LOOP LATER
-pcor = [];
-for i = 1:length(o_train(1,:))-1
-    pcor = [pcor;i,corr(o_train(:,i),o_train(:,14))];
-    
-%     UNCOMMENT BELOW FOR LOOP LATER
-        f =  figure('Name',col_name{i});
-        histogram(o_train(:,i),10);
-        title(sprintf('Histogram of %s distribution\nPearson Correlation = %f', col_name{i}, pcor(i,2)));
-        xlabel(col_name{i});
-        ylabel('Count');
-        s = sprintf('%s.jpg',col_name{i});
-    
-    %     saveas(f,s);
-end
-
+[pcor] = plot_histograms(o_train, col_name);
+rd_pcor = pcor;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,7 +42,7 @@ Y_train_true = o_train(:,14);
 [Z_train,mu_train,sigma_train] = zscore(X_norm_train);
 X_norm_train = Z_train;
 
-%Add a colum of 1's 
+%Add a colum of 1's
 sz_train = size(X_norm_train(:,1));
 o_1_train = ones(sz_train);
 X_norm_train = [o_1_train,X_norm_train];
@@ -76,13 +67,14 @@ X_norm_test = [o_1_test,X_norm_test];
 
 %Linear Regression for TRAIN and Test
 [W_out_lr, Y_train_pred_lr, MSE_train_lr, Y_test_pred_lr, MSE_test_lr] = ...
-                Linear_regression_both(X_norm_train, Y_train_true, X_norm_test, Y_test_true);
-            
+    Linear_regression_both(X_norm_train, Y_train_true, X_norm_test, Y_test_true);
+
 Res_train(1,1) = str_res(1);
 Res_train(1,2) = cellstr(num2str(MSE_train_lr));
 
 Res_test(1,1) = str_res(1);
 Res_test(1,2) = cellstr(num2str(MSE_test_lr));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Ridge Regression for TRAIN and Test
 W_train_rr = [];
@@ -90,7 +82,7 @@ for i =1:length(L)
     
     [W_out_rr, Y_train_pred_rr, MSE_train_rr, Y_test_pred_rr, MSE_test_rr] = ...
         Ridge_regression_both(X_norm_train, L(i), Y_train_true, X_norm_test, Y_test_true );
-
+    
     Res_train(i+1,1) = str_res(i+1);
     Res_train(i+1,2) = cellstr(num2str(MSE_train_rr));
     Res_test(i+1,1) = str_res(i+1);
@@ -146,17 +138,13 @@ while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
         
         [W_out_rr, Y_train_pred_rr, MSE_train_rr, Y_pred_test_rr, MSE_test_rr]= ...
             Ridge_regression_both(cv_X_norm_train, cv_lamda, cv_Y_train_true,cv_X_test,cv_Y_test_true);
-              
-%         if MSE_test_rr < min_mse
-%             min_mse = MSE_test_rr;
-%             w_min = W_out_rr;
-%         end
+        
         curr_mse_l = curr_mse_l + MSE_test_rr;
         
         
     end % end for
     Res_cv = [Res_cv; cv_lamda,(curr_mse_l/10)];
-%     Res_cv_w = [Res_cv_w; cv_lamda,  w_min];
+    %     Res_cv_w = [Res_cv_w; cv_lamda,  w_min];
     if res_i ==1
         fprintf('%f\t\t%f\n',Res_cv(res_i,1),Res_cv(res_i,2));
     elseif mod(res_i,10)==0
@@ -188,9 +176,9 @@ text(xmin,ymin,strmin,'HorizontalAlignment','left');
 fprintf('_____________________________________________________________________\n');
 fprintf('\n Results of Cross validation on Testing Set::\n Lamda Value \t MSE\n');
 [W_out_rr, Y_train_pred_rr, MSE_train_rr, Y_pred_test_rr, MSE_test_rr]= ...
-            Ridge_regression_both(X_norm_train, xmin, Y_train_true, X_norm_test, Y_test_true);
- fprintf('%f\t\t%f\n',xmin,MSE_test_rr);
-        
+    Ridge_regression_both(X_norm_train, xmin, Y_train_true, X_norm_test, Y_test_true);
+fprintf('%f\t\t%f\n',xmin,MSE_test_rr);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %FEATURE SELECTION
 %BEST 4
@@ -214,8 +202,64 @@ disp(sorted_pcor(1:4,:));
 fprintf('\nMSE on training data:: %f',MSE_fc_lr_train);
 
 fprintf('\nMSE on Testing data:: %f\n',MSE_fc_lr_test);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %RESIDUAL
+% X_norm_train
+% Y_train_true
+% X_norm_test
+% Y_test_true
+
+rd_X_norm_train = X_norm_train;
+rd_Y_train_true = Y_train_true;
+rd_X_norm_test = X_norm_test;
+rd_Y_test_true = Y_test_true;
+
+rd_Y_due = rd_Y_train_true;
+rd_col_selected = [];
+
+rd_final_mse_train = 0;
+rd_final_mse_test = 0;
+for i=1:4
+    
+    rd_pcor = [];
+    for j = 2:length(rd_X_norm_train(1,:))
+        temp_c = corr(rd_X_norm_train(:,j), rd_Y_due);
+        if ~isnan(temp_c)
+            rd_pcor = [rd_pcor; j, temp_c];
+        end
+    end
+    %sort the corellation values and selec the highest
+    rd_pcor = [rd_pcor(:,1),abs(rd_pcor(:,2))];
+    rd_pcor = sortrows(rd_pcor,-2);
+    top = rd_pcor(1,1);
+    
+    %record the columns selected and thier corelation
+    rd_col_selected = [rd_col_selected; top, rd_pcor(1,2)];
+    X_cols = transpose(rd_col_selected(:,1));
+    
+    %Pass all currently selected columns along with column of 1's   
+    cols_pass_train = [X_norm_train(:,1),X_norm_train(:,X_cols)];
+    cols_pass_test = [X_norm_test(:,1),X_norm_test(:,X_cols)];
+    
+    [W_out_rd, Y_train_pred_rd, MSE_train_rd, Y_test_pred_rd, MSE_test_rd] = ...
+    Linear_regression_both(cols_pass_train, rd_Y_train_true, cols_pass_test, rd_Y_test_true);
+    
+    rd_X_norm_train(:,top) = 0;
+    rd_Y_due = rd_Y_train_true - Y_train_pred_rd;
+    
+    rd_final_mse_train = MSE_train_rd;
+    rd_final_mse_tesr = MSE_test_rd;
+end
+rd_col_selected(:,1) = rd_col_selected(:,1) -1; 
+fprintf('_____________________________________________________________________\n');
+fprintf('\n\nFeatures Selected based on Residue are::\nAttrubute\t\tCorellation\n');
+disp(rd_col_selected);
+fprintf('\nMSE on training data:: %f',MSE_train_rd);
+
+fprintf('\nMSE on Testing data:: %f\n',MSE_test_rd);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %BRUTE FORCE
 fprintf('_____________________________________________________________________\n');
@@ -238,14 +282,14 @@ for i=1:length(C(:,1))
     
     [W_bf_train_lr, Y_pred_train, MSE_bf_lr_train, Y_bf_lr_test, MSE_bf_lr_test] = ...
         Linear_regression_both(X_bf_train, Y_train_true, X_bf_test, Y_test_true );
-        
+    
     if  MSE_bf_lr_train < bf_min_mse_train
         bf_min_mse_train = MSE_bf_lr_train;
         bf_min_mse_train_test = MSE_bf_lr_test;
         bf_min_cols_train = curr_cols;
     end
-         
-    if MSE_bf_lr_test < bf_min_mse_test 
+    
+    if MSE_bf_lr_test < bf_min_mse_test
         bf_min_mse_test = MSE_bf_lr_test;
         bf_min_mse_test_train = MSE_bf_lr_train;
         bf_min_cols_test = curr_cols;
@@ -258,6 +302,7 @@ fprintf('Corresponding value of MSE: %f on Tesing SET\n',bf_min_mse_train_test);
 fprintf('\nBest Columns for MIN MSE: %f on Testing SET\n',bf_min_mse_test);
 disp(bf_min_cols_test-1);
 fprintf('Corresponding value of MSE: %f on Training SET\n',bf_min_mse_test_train);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Polynomial Feature Expansion
 fprintf('_____________________________________________________________________\n');
@@ -281,6 +326,6 @@ end
 fprintf('\nMSE on Training data:: %f\n',MSE_lr_train);
 
 fprintf('\nMSE on Testing data:: %f\n',MSE_lr_test);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % [B, FitInfo] = lasso(X_norm_train,Y_train_true,'CV',10);
 % lassoPlot(B,FitInfo,'PlotType','CV');
