@@ -19,9 +19,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % % length(o_train) + length(o_test)
-% % %  col_name{2}
-
 %PLOT HISTOGRAMS AND CALCULATE PERSON CORELLATION
 
 %UNCOMMENT BELOW FOR LOOP LATER
@@ -44,13 +41,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Data preprocessing for train
+
 Res_train = cell(4,2);
 %split attribute and Y value
 X_norm_train = o_train(:,1:13);
 Y_train_true = o_train(:,14);
+
 %Normalize
 [Z_train,mu_train,sigma_train] = zscore(X_norm_train);
 X_norm_train = Z_train;
+
 %Add a colum of 1's 
 sz_train = size(X_norm_train(:,1));
 o_1_train = ones(sz_train);
@@ -66,6 +66,7 @@ for i = 1: length(X_norm_test(:,1))
     X_norm_test(i,:) = ((X_norm_test(i,:) - mu_train))./(sigma_train);
 end
 
+%Add column of 1's
 sz_test = size(X_norm_test(:,1));
 o_1_test = ones(sz_test);
 X_norm_test = [o_1_test,X_norm_test];
@@ -73,68 +74,33 @@ X_norm_test = [o_1_test,X_norm_test];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Linear Regression for TRAIN
-W_train_lr = [];
-[W_train_lr, Y_pred_train] = Linear_regression(X_norm_train, Y_train_true);
-
-MSE_lr_train = ( sum( (Y_train_true - Y_pred_train).^2) ) / length(X_norm_train(:,1));
+%Linear Regression for TRAIN and Test
+[W_out_lr, Y_train_pred_lr, MSE_train_lr, Y_test_pred_lr, MSE_test_lr] = ...
+                Linear_regression_both(X_norm_train, Y_train_true, X_norm_test, Y_test_true);
+            
 Res_train(1,1) = str_res(1);
-Res_train(1,2) = cellstr(num2str(MSE_lr_train));
+Res_train(1,2) = cellstr(num2str(MSE_train_lr));
 
-%Ridge Regression for TRAIN
+Res_test(1,1) = str_res(1);
+Res_test(1,2) = cellstr(num2str(MSE_test_lr));
+
+%Ridge Regression for TRAIN and Test
 W_train_rr = [];
 for i =1:length(L)
     
-    [W_rr, Y_pred_train_rr] = Ridge_regression(X_norm_train, L(i), Y_train_true);
-    W_train_rr = [W_train_rr; W_rr];
-    MSE_rr_train = ( sum( (Y_train_true - Y_pred_train_rr).^2) ) / length(X_norm_train(:,1));
+    [W_out_rr, Y_train_pred_rr, MSE_train_rr, Y_test_pred_rr, MSE_test_rr] = ...
+        Ridge_regression_both(X_norm_train, L(i), Y_train_true, X_norm_test, Y_test_true );
+
     Res_train(i+1,1) = str_res(i+1);
-    Res_train(i+1,2) = cellstr(num2str(MSE_rr_train));
+    Res_train(i+1,2) = cellstr(num2str(MSE_train_rr));
+    Res_test(i+1,1) = str_res(i+1);
+    Res_test(i+1,2) = cellstr(num2str(MSE_test_rr));
 end
 
 fprintf('_____________________________________________________________________\n');
 fprintf('The results for Training Set using Linear and Ridge regression::\n');
 fprintf('\t\tAlgorithm\t\t\t\t\tMSE\n')
 disp(Res_train);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%Linear Regression for TEST based in W learned in training
-Y_lr_test = [];
-for i =1:length(X_norm_test(:,1))
-    temp_y = W_train_lr * transpose(X_norm_test(i,:));
-    Y_lr_test = [Y_lr_test;temp_y];
-end
-
-MSE_lr_test = ( sum( (Y_test_true - Y_lr_test).^2) ) / length(X_norm_test(:,1));
-Res_test(1,1) = str_res(1);
-Res_test(1,2) = cellstr(num2str(MSE_lr_test));
-
-
-%Ridge Regression for TEST
-
-for i =1:length(L)
-    Y_rr_test = [];
-    
-    W_rr_l = W_train_rr(i,:);
-    
-    for j =1:length(X_norm_test(:,1))
-        temp_y = W_rr_l * transpose(X_norm_test(j,:));
-        Y_rr_test = [Y_rr_test;temp_y];
-    end
-    
-    MSE_rr_test = ( sum( (Y_test_true - Y_rr_test).^2) ) / length(X_norm_test(:,1));
-    Res_test(i+1,1) = str_res(i+1);
-    Res_test(i+1,2) = cellstr(num2str(MSE_rr_test));
-end
-
-fprintf('\n_____________________________________________________________________\n');
-fprintf('The results for Testing Set using Linear and Ridge regression::\n');
-fprintf('\t\tAlgorithm\t\t\t\t\tMSE\n')
-disp(Res_test);
-fprintf('_____________________________________________________________________\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
