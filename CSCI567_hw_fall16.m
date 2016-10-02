@@ -147,13 +147,13 @@ while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
     %     Res_cv_w = [Res_cv_w; cv_lamda,  w_min];
     if res_i ==1
         fprintf('%f\t\t%f\n',Res_cv(res_i,1),Res_cv(res_i,2));
-    elseif mod(res_i,10)==0
+    elseif mod(res_i,100)==0
         fprintf('%f\t\t%f\n',Res_cv(res_i,1),Res_cv(res_i,2));
     end
     res_i = res_i +1;
     %0.05 5.000100		28.671652
     %0.01 4.990100		28.671087
-    cv_lamda = cv_lamda + .05;
+    cv_lamda = cv_lamda + .02;
 end
 
 %Find min value of MSE in Res_cv and use its corresponding value of Lamda
@@ -225,7 +225,7 @@ for i=1:4
     
     rd_pcor = [];
     for j = 2:length(rd_X_norm_train(1,:))
-        temp_c = corr(rd_X_norm_train(:,j), rd_Y_due);
+        temp_c = Pearson_correlation(rd_X_norm_train(:,j), rd_Y_due);
         if ~isnan(temp_c)
             rd_pcor = [rd_pcor; j, temp_c];
         end
@@ -239,12 +239,12 @@ for i=1:4
     rd_col_selected = [rd_col_selected; top, rd_pcor(1,2)];
     X_cols = transpose(rd_col_selected(:,1));
     
-    %Pass all currently selected columns along with column of 1's   
+    %Pass all currently selected columns along with column of 1's
     cols_pass_train = [X_norm_train(:,1),X_norm_train(:,X_cols)];
     cols_pass_test = [X_norm_test(:,1),X_norm_test(:,X_cols)];
     
     [W_out_rd, Y_train_pred_rd, MSE_train_rd, Y_test_pred_rd, MSE_test_rd] = ...
-    Linear_regression_both(cols_pass_train, rd_Y_train_true, cols_pass_test, rd_Y_test_true);
+        Linear_regression_both(cols_pass_train, rd_Y_train_true, cols_pass_test, rd_Y_test_true);
     
     rd_X_norm_train(:,top) = 0;
     rd_Y_due = rd_Y_train_true - Y_train_pred_rd;
@@ -252,7 +252,7 @@ for i=1:4
     rd_final_mse_train = MSE_train_rd;
     rd_final_mse_tesr = MSE_test_rd;
 end
-rd_col_selected(:,1) = rd_col_selected(:,1) -1; 
+rd_col_selected(:,1) = rd_col_selected(:,1) -1;
 fprintf('_____________________________________________________________________\n');
 fprintf('\n\nFeatures Selected based on Residue are::\nAttrubute\t\tCorellation\n');
 disp(rd_col_selected);
@@ -314,8 +314,14 @@ X_pf_train = X_norm_train;
 for i=2: length(X_norm_test(1,:))
     for j=i: length(X_norm_test(1,:))
         new_X_train = X_norm_train(:,i) .* X_norm_train(:,j);
+        
+        [new_X_train,mu_train_pf,sigma_train_pf] = zscore(new_X_train);
         X_pf_train = [X_pf_train,new_X_train];
+        
         new_X_test = X_norm_test(:,i) .* X_norm_test(:,j);
+%         for k = 1: length(new_X_test(:,1))
+        new_X_test = ((new_X_test - mu_train_pf))./(sigma_train_pf);
+%         end
         X_pf_test = [X_pf_test,new_X_test];
     end
 end
