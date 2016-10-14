@@ -103,34 +103,50 @@ disp(Res_test);
 
 %Ridge Regression with Cross-Validation
 %10 fold cross validation
-fprintf('\nIncrementing lamda by 0.05 after each iteration\nDisplaying only every 10th row for compactness');
+fprintf('\nIncrementing lamda by 0.01 after each iteration\nDisplaying only every 100th row for compactness');
 fprintf('\n Results of Cross validation on Training Set::\nLamda Value \t MSE\n');
 cv_lamda = 0.0001;
 Res_cv = [];
 Res_cv_w = [];
 res_i =1;
+
+% shuffled = [X_norm_train,Y_train_true];
+% ordering = transpose(randperm(length(X_norm_train(:,1))));
+% shuffled = shuffled(ordering,:);
+%     
+
 while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
     %retain 43 rows 7 times and 44 rows 3 times
     curr_mse_l = 0;
     index = 1;
-    
+    cv_X_norm_train = X_norm_train;
+    cv_Y_train_true = Y_train_true;
+%     
+%     shuffled = [cv_X_norm_train,cv_Y_train_true];
+%     ordering = transpose(randperm(length(X_norm_train(:,1))));
+%     shuffled = shuffled(ordering,:);
+%     
     for i=1:10
         min_mse = Inf;
         w_min = [];
+        
+        
         cv_X_norm_train = X_norm_train;
         cv_Y_train_true = Y_train_true;
         
+%         cv_X_norm_train = shuffled(:,1:14);
+%         cv_Y_train_true = shuffled(:,15);
         if(i<=7)
             %extract the test data
-            cv_X_test = X_norm_train(index:index+42,:);
-            cv_Y_test_true = Y_train_true(index:index+42);
+            cv_X_test = cv_X_norm_train(index:index+42,:);
+            cv_Y_test_true = cv_Y_train_true(index:index+42);
             %delete the extracted data from training set
             cv_X_norm_train(index:index+42,:) = [];
             cv_Y_train_true(index:index+42) = [];
             index = index + 43;
         else
-            cv_X_test = X_norm_train(index:index+43,:);
-            cv_Y_test_true = Y_train_true(index:index+43);
+            cv_X_test = cv_X_norm_train(index:index+43,:);
+            cv_Y_test_true = cv_Y_train_true(index:index+43);
             cv_X_norm_train(index:index+43,:) = [];
             cv_Y_train_true(index:index+43) = [];
             index = index + 44;
@@ -153,7 +169,7 @@ while(abs(cv_lamda - 10) > 0.0001 && cv_lamda <= 10)
     res_i = res_i +1;
     %0.05 5.000100		28.671652
     %0.01 4.990100		28.671087
-    cv_lamda = cv_lamda + .02;
+    cv_lamda = cv_lamda + .01;
 end
 
 %Find min value of MSE in Res_cv and use its corresponding value of Lamda
@@ -163,15 +179,20 @@ x = Res_cv(:,1);
 y = Res_cv(:,2);
 
 figure('Name','Lamda vs MSE')
+
+
+plot(Res_cv(:,1),Res_cv(:,2))
+title('Ridge Regression with Cross Validation')
 xlabel('Lamda');
 ylabel('MSE')
-title('Ridge Regression with Cross Validation')
-plot(Res_cv(:,1),Res_cv(:,2))
 indexmin = find(min(y) == y);
 xmin = x(indexmin);
 ymin = y(indexmin);
 strmin = sprintf('Min (%f, %f)',xmin,ymin);
 text(xmin,ymin,strmin,'HorizontalAlignment','left');
+fprintf('\n The Value of Lamda that gives minimum MSE in Training Set::\n Lamda Value \t MSE\n');
+fprintf('%f\t\t%f\n',xmin,ymin);
+
 
 fprintf('_____________________________________________________________________\n');
 fprintf('\n Results of Cross validation on Testing Set::\n Lamda Value \t MSE\n');
@@ -319,9 +340,9 @@ for i=2: length(X_norm_test(1,:))
         X_pf_train = [X_pf_train,new_X_train];
         
         new_X_test = X_norm_test(:,i) .* X_norm_test(:,j);
-%         for k = 1: length(new_X_test(:,1))
+        %         for k = 1: length(new_X_test(:,1))
         new_X_test = ((new_X_test - mu_train_pf))./(sigma_train_pf);
-%         end
+        %         end
         X_pf_test = [X_pf_test,new_X_test];
     end
 end
